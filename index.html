@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email List</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container mt-5">
+    <h2>Email List</h2>
+    <form id="emailForm">
+      <div class="list-group" id="emailList"></div>
+      <button type="button" class="btn btn-danger mt-3" id="resetButton">Reset</button>
+    </form>
+  </div>
+
+  <!-- Bootstrap JS and dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+  <script>
+    // Fungsi untuk merender daftar email dengan checkbox
+    function renderEmailList(emailData) {
+      const emailListContainer = document.getElementById('emailList');
+      emailListContainer.innerHTML = ''; // Clear existing list
+
+      emailData.forEach((email, index) => {
+        const listItem = document.createElement('div');
+        listItem.classList.add('list-group-item', 'd-flex', 'align-items-center');
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.classList.add('form-check-input', 'me-2');
+        checkbox.id = `email${index}`;
+
+        // Set checkbox checked state based on cookie (if exists)
+        checkbox.checked = getCookie(`email${index}`) === 'true';
+        checkbox.addEventListener('change', () => {
+          setCookie(`email${index}`, checkbox.checked, 7); // Save to cookie (valid for 7 days)
+        });
+
+        const label = document.createElement('label');
+        label.classList.add('form-check-label');
+        label.setAttribute('for', `email${index}`);
+        label.textContent = email;
+
+        listItem.appendChild(checkbox);
+        listItem.appendChild(label);
+        emailListContainer.appendChild(listItem);
+      });
+    }
+
+    // Fungsi untuk mendapatkan cookie berdasarkan nama
+    function getCookie(name) {
+      const cookies = document.cookie.split('; ');
+      for (let i = 0; i < cookies.length; i++) {
+        const [key, value] = cookies[i].split('=');
+        if (key === name) {
+          return value;
+        }
+      }
+      return null;
+    }
+
+    // Fungsi untuk menyimpan cookie
+    function setCookie(name, value, days) {
+      const d = new Date();
+      d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000)); // Expire in 'days'
+      const expires = "expires=" + d.toUTCString();
+      document.cookie = `${name}=${value}; ${expires}; path=/`;
+    }
+
+    // Fungsi untuk mereset semua cookie dan checkbox
+    function resetList() {
+      const emailList = document.querySelectorAll('.form-check-input');
+      emailList.forEach(checkbox => {
+        setCookie(checkbox.id, 'false', -1); // Delete cookie
+        checkbox.checked = false; // Reset checkbox
+      });
+    }
+
+    // Event listener untuk tombol reset
+    document.getElementById('resetButton').addEventListener('click', resetList);
+
+    // Fungsi untuk mengambil dan merender daftar email dari file txt
+    function fetchEmails() {
+      fetch('email.txt')
+        .then(response => response.text())  // Mendapatkan teks dari file
+        .then(data => {
+          const emailList = data.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+          renderEmailList(emailList);
+        })
+        .catch(error => {
+          console.error('Error fetching email list:', error);
+        });
+    }
+
+    // Ambil daftar email saat halaman dimuat
+    fetchEmails();
+  </script>
+</body>
+</html>
